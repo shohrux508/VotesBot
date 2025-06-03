@@ -6,7 +6,7 @@ from pyee.asyncio import AsyncIOEventEmitter
 load_dotenv('.env')
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 ADMIN_ID = os.getenv('ADMIN_ID')
-
+DATABASE_URL = os.getenv('DATABASE_URL')
 event_bus = AsyncIOEventEmitter()
 
 

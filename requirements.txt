@@ -21,3 +21,5 @@ pytz~=2025.2
 python-dotenv~=1.1.0
 pyee~=13.0.0
 pydantic-settings~=2.9.1
+SQLAlchemy~=2.0.41
+requests~=2.32.3
