@@ -3,7 +3,7 @@ from collections.abc import Sequence
 
 from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import Base
+from app.data.database import Base
 from pydantic import BaseModel
 
 ModelType = TypeVar('ModelType', bound=Base)

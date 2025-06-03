@@ -1,6 +1,6 @@
 from typing import Generic
 
-from app.data.repository import RepoType, SchemaType, ModelType
+from app.data.repository import RepoType
 
 
 class BaseService(Generic[RepoType]):
