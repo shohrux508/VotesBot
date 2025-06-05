@@ -1,20 +1,18 @@
 import asyncio
 
-from aiogram import Bot, Dispatcher
-from aiogram.client.default import DefaultBotProperties
-from app.config import BOT_TOKEN, LoggingSettings
+from app.handlers.admin_create import admin_create_rt
+from app.handlers.admin_publish import admin_publish_rt
+from app.config import LoggingSettings, dp, bot
 import pytz
 from datetime import datetime
 
+from app.data.database import init_db
 from app.logger_module.config import LoggingConfig
-from app.users import user_rt
-from app.admins import admin_rt
+from app.handlers.users import user_rt
+from app.handlers.admin_read import admin_rt
 import logging
 
-default = DefaultBotProperties(parse_mode='MARKDOWN')
 
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher()
 settings = LoggingSettings()  # прочитает .env автоматически
 LoggingConfig(settings).setup()
 
@@ -26,6 +24,8 @@ def get_logger(name: str = __name__) -> logging.Logger:
 def setup_routers():
     dp.include_router(user_rt)
     dp.include_router(admin_rt)
+    dp.include_router(admin_create_rt)
+    dp.include_router(admin_publish_rt)
 
 
 def setup_timezone():
@@ -36,6 +36,7 @@ def setup_timezone():
 async def main():
     setup_timezone()
     setup_routers()
+    await init_db()
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
 

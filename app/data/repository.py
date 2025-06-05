@@ -3,8 +3,11 @@ from collections.abc import Sequence
 
 from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.data.database import Base
 from pydantic import BaseModel
+
+from app.data.models import Vote, Category, Candidate
 
 ModelType = TypeVar('ModelType', bound=Base)
 SchemaType = TypeVar('SchemaType', bound=BaseModel)
@@ -72,3 +75,13 @@ class BaseRepository(Generic[ModelType]):
         Проверка: существует ли запись с таким ID.
         """
         return await self.get_by_id(id) is not None
+
+
+class VotesRepository(BaseRepository[Vote]):
+    pass
+
+class CategoryRepository(BaseRepository[Category]):
+    pass
+
+class CandidateRepository(BaseRepository[Candidate]):
+    pass

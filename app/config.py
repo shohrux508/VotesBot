@@ -1,4 +1,7 @@
 import os
+
+from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pyee.asyncio import AsyncIOEventEmitter
@@ -8,7 +11,10 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 ADMIN_ID = os.getenv('ADMIN_ID')
 DATABASE_URL = os.getenv('DATABASE_URL')
 event_bus = AsyncIOEventEmitter()
+default = DefaultBotProperties(parse_mode='MARKDOWN')
 
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher()
 
 # Настройка логирования
 
