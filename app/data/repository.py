@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.data.database import Base
 from pydantic import BaseModel
 
-from app.data.models import Vote, Category, Candidate
+from app.data.models import Vote, Category, Candidate, Channel
 
 ModelType = TypeVar('ModelType', bound=Base)
 SchemaType = TypeVar('SchemaType', bound=BaseModel)
@@ -84,4 +84,7 @@ class CategoryRepository(BaseRepository[Category]):
     pass
 
 class CandidateRepository(BaseRepository[Candidate]):
+    pass
+
+class ChannelRepository(BaseRepository[Channel]):
     pass

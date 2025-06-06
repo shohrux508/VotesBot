@@ -12,7 +12,7 @@ class Category(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
     candidates: Mapped[list["Candidate"]] = relationship(back_populates="category")
-
+    is_active: Mapped[int] = mapped_column(default=0)
 
 class Candidate(Base):
     __tablename__ = "candidates"
@@ -35,3 +35,10 @@ class Vote(Base):
     candidate_id: Mapped[int] = mapped_column(ForeignKey("candidates.id"))
     timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     candidate: Mapped["Candidate"] = relationship(back_populates="received_votes")
+
+
+class Channel(Base):
+    __tablename__ = 'channels'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
+    chat_id: Mapped[int] = mapped_column()

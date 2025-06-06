@@ -1,5 +1,6 @@
 import asyncio
 
+from app.middleware.check_subscription_middleware import SubscriptionMiddleware
 from app.handlers.admin_create import admin_create_rt
 from app.handlers.admin_publish import admin_publish_rt
 from app.config import LoggingSettings, dp, bot
@@ -7,6 +8,7 @@ import pytz
 from datetime import datetime
 
 from app.data.database import init_db
+from app.handlers.channels import channels_rt
 from app.logger_module.config import LoggingConfig
 from app.handlers.users import user_rt
 from app.handlers.admin_read import admin_rt
@@ -22,11 +24,12 @@ def get_logger(name: str = __name__) -> logging.Logger:
 
 
 def setup_routers():
+    dp.message.middleware(SubscriptionMiddleware())
     dp.include_router(user_rt)
     dp.include_router(admin_rt)
     dp.include_router(admin_create_rt)
     dp.include_router(admin_publish_rt)
-
+    dp.include_router(channels_rt)
 
 def setup_timezone():
     pytz.timezone("Asia/Tashkent")

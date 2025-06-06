@@ -1,11 +1,8 @@
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.filters.state import StateFilter, State, StatesGroup
+from aiogram.filters.state import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, CallbackQuery, InlineKeyboardButton, Message
-
-from pydantic import BaseModel
-
 from sqlalchemy.ext.asyncio import async_session
 from sqlalchemy.orm import selectinload
 
@@ -13,26 +10,16 @@ from app.config import bot
 from app.data.database import async_session  # оставлен единственный импорт из вашего модуля
 from app.data.models import Category, Candidate
 from app.data.repository import CategoryRepository, CandidateRepository
+from app.middleware.check_admin import AdminOnlyMiddleware
+from app.schemas import CategoryCreate, CreateCandidate
+from app.states import VotesStates
 from app.utils import filter_data
 
-
 admin_create_rt = Router(name='admin_create')
+admin_create_rt.message.middleware(AdminOnlyMiddleware())
 
 
-# ------------------------------
-# Состояния FSM для создания голосования
-# ------------------------------
-
-class VotesStates(StatesGroup):
-    get_category_title = State()
-    get_candidate = State()
-
-
-# ------------------------------
-# Uтилитарные функции для клавиатур
-# ------------------------------
-
-def new_vote_kb(cat_id: int, run_vote_btn: bool = False, check_btn: bool = False) -> InlineKeyboardMarkup:
+def manage_new_category_kb(cat_id: int, run_vote_btn: bool = False, check_btn: bool = False) -> InlineKeyboardMarkup:
     """
     Клавиатура для управления голосованием:
     - Добавить кандидата
@@ -66,30 +53,11 @@ def new_vote_kb(cat_id: int, run_vote_btn: bool = False, check_btn: bool = False
     return keyboard
 
 
-async def candidates_kb() -> InlineKeyboardMarkup:
-    """
-    Клавиатура со всеми кандидатами (для демонстрации).
-    """
-    async with async_session() as session:
-        repo = CandidateRepository(Candidate, session)
-        candidates = await repo.list_all()
-
-    buttons = [
-        InlineKeyboardButton(
-            text=f"{candidate.name} - {candidate.received_votes}",
-            callback_data="candidate"
-        )
-        for candidate in candidates
-    ]
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[btn] for btn in buttons])
-    return keyboard
-
-
 # ------------------------------
 # Хендлеры на команды
 # ------------------------------
 
-@admin_create_rt.message(Command('new'))
+@admin_create_rt.message(Command('new_category'))
 async def create_votes(msg: Message, state: FSMContext):
     """
     Шаг 1: Просим ввести название категории (чтобы создать новую категорию голосования).
@@ -105,14 +73,6 @@ async def create_votes(msg: Message, state: FSMContext):
 
     await state.update_data(msg1=msg1.message_id, msg2=msg2.message_id)
     await state.set_state(VotesStates.get_category_title)
-
-
-# ------------------------------
-# Pydantic-схема для создания категории
-# ------------------------------
-
-class CategoryCreate(BaseModel):
-    title: str
 
 
 @admin_create_rt.message(StateFilter(VotesStates.get_category_title))
@@ -146,19 +106,10 @@ async def add_title(msg: Message, state: FSMContext):
         chat_id=msg.from_user.id,
         message_id=msg1_id,
         text=f"{title}\nNomzodlar soni: 0",
-        reply_markup=new_vote_kb(cat_id=category.id)
+        reply_markup=manage_new_category_kb(cat_id=category.id)
     )
 
     await state.clear()
-
-
-# ------------------------------
-# Pydantic-схема для создания кандидата
-# ------------------------------
-
-class CreateCandidate(BaseModel):
-    name: str
-    category_id: int
 
 
 @admin_create_rt.callback_query(F.data.startswith('new-vote,add-candidate,category:'))
@@ -223,7 +174,7 @@ async def add_candidate(msg: Message, state: FSMContext):
         chat_id=msg.from_user.id,
         message_id=msg1_id,
         text=f"{category.title}\nNomzodlar soni: {candidates_count}",
-        reply_markup=new_vote_kb(
+        reply_markup=manage_new_category_kb(
             cat_id=category_id,
             check_btn=True,
             run_vote_btn=True
@@ -233,21 +184,3 @@ async def add_candidate(msg: Message, state: FSMContext):
     await state.clear()
 
 
-@admin_create_rt.callback_query(F.data.startswith('check,category_id:'))
-async def check_category(call: CallbackQuery):
-    """
-    Обработчик нажатия кнопки "Tekshirish".
-    """
-    category_id = filter_data(call.data, 'check,category_id:')
-    async with async_session() as session:
-        category = await session.get(
-            Category,
-            category_id,
-            options=[selectinload(Category.candidates)]
-        )
-        # Здесь можно добавить логику по отображению списка кандидатов,
-        # их голосов и т.д. В примере просто отправим сообщение:
-        text = f"Toifa: {category.title}\nNomzodlar: ({len(category.candidates)}):\n"
-        for cand in category.candidates:
-            text += f"• {cand.name} — {cand.votes} ovoz\n"
-        await call.answer(text, show_alert=True)
