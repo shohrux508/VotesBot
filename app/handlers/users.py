@@ -1,17 +1,14 @@
 from aiogram import Router, F
-from aiogram.enums import ChatMemberStatus
 from aiogram.filters import CommandStart, CommandObject, Command
-from aiogram.types import Message, InlineKeyboardMarkup, CallbackQuery
+from aiogram.types import Message, CallbackQuery
 from sqlalchemy.exc import IntegrityError
 
-from app.config import bot, ADMIN_IDS
+from app.config import ADMIN_IDS
 from app.data.database import async_session
-from app.data.models import Candidate, Vote, Category
-from app.data.repository import CategoryRepository
+from app.data.models import Candidate, Vote
 from app.keyboards import main_kb, candidates_kb
 from app.utils import filter_data
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from sqlalchemy import select, update, insert
+from sqlalchemy import update, insert
 
 user_rt = Router(name='users')
 
@@ -105,7 +102,9 @@ async def vote(call: CallbackQuery):
         # IntegrityError возникает, если уже есть запись user_id+candidate_id
         await call.message.answer("Siz allaqachon ovoz bergansiz!")
     except Exception:
-        await call.message.answer("Xatolik yuz berdi, iltimos qayta urinib ko‘ring.")
+        await call.message.answer(
+            "Xatolik yuz berdi, iltimos qayta urinib ko‘ring."
+        )
 
     await call.bot.edit_message_text(
         chat_id=call.from_user.id,

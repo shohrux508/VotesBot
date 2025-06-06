@@ -5,7 +5,8 @@ from aiogram.types import Message
 
 from app.data.database import async_session
 from app.data.models import Channel
-from app.data.repository import ChannelRepository  # предполагается, что есть методы create() и list_all()
+# ChannelRepository предполагается содержит методы create() и list_all()
+from app.data.repository import ChannelRepository
 
 channels_rt = Router(name='channels')
 

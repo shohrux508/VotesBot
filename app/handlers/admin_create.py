@@ -2,12 +2,16 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.filters.state import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardMarkup, CallbackQuery, InlineKeyboardButton, Message
-from sqlalchemy.ext.asyncio import async_session
+from aiogram.types import (
+    InlineKeyboardMarkup,
+    CallbackQuery,
+    InlineKeyboardButton,
+    Message,
+)
 from sqlalchemy.orm import selectinload
 
 from app.config import bot
-from app.data.database import async_session  # оставлен единственный импорт из вашего модуля
+from app.data.database import async_session  # импорт из нашего модуля
 from app.data.models import Category, Candidate
 from app.data.repository import CategoryRepository, CandidateRepository
 from app.middleware.check_admin import AdminOnlyMiddleware
@@ -19,7 +23,11 @@ admin_create_rt = Router(name='admin_create')
 admin_create_rt.message.middleware(AdminOnlyMiddleware())
 
 
-def manage_new_category_kb(cat_id: int, run_vote_btn: bool = False, check_btn: bool = False) -> InlineKeyboardMarkup:
+def manage_new_category_kb(
+    cat_id: int,
+    run_vote_btn: bool = False,
+    check_btn: bool = False,
+) -> InlineKeyboardMarkup:
     """
     Клавиатура для управления голосованием:
     - Добавить кандидата
@@ -59,9 +67,8 @@ def manage_new_category_kb(cat_id: int, run_vote_btn: bool = False, check_btn: b
 
 @admin_create_rt.message(Command('new_category'))
 async def create_votes(msg: Message, state: FSMContext):
-    """
-    Шаг 1: Просим ввести название категории (чтобы создать новую категорию голосования).
-    """
+    """Шаг 1: Просим ввести название категории
+    для новой категории голосования."""
     msg1 = await msg.answer(
         "TOIFA NOMI: -\n"
         "Nomzodlar soni: 0"
@@ -77,10 +84,8 @@ async def create_votes(msg: Message, state: FSMContext):
 
 @admin_create_rt.message(StateFilter(VotesStates.get_category_title))
 async def add_title(msg: Message, state: FSMContext):
-    """
-    Шаг 2: Создаём категорию, удаляем вспомогательные сообщения, редактируем текст
-    с кнопкой для добавления кандидатов.
-    """
+    """Шаг 2: Создаём категорию и редактируем
+    сообщение с кнопкой добавления."""
     data = await state.get_data()
     msg1_id = data.get('msg1')
     msg2_id = data.get('msg2')
@@ -99,7 +104,10 @@ async def add_title(msg: Message, state: FSMContext):
 
     # Удаляем ввод пользователя и сообщение с подсказкой
     await bot.delete_message(chat_id=msg.from_user.id, message_id=msg2_id)
-    await bot.delete_message(chat_id=msg.from_user.id, message_id=msg.message_id)
+    await bot.delete_message(
+        chat_id=msg.from_user.id,
+        message_id=msg.message_id,
+    )
 
     # Редактируем первое сообщение на название категории + кнопка
     await bot.edit_message_text(
@@ -112,7 +120,9 @@ async def add_title(msg: Message, state: FSMContext):
     await state.clear()
 
 
-@admin_create_rt.callback_query(F.data.startswith('new-vote,add-candidate,category:'))
+@admin_create_rt.callback_query(
+    F.data.startswith('new-vote,add-candidate,category:')
+)
 async def answer(call: CallbackQuery, state: FSMContext):
     """
     Шаг 3: Нажали "Nomzod qo'shish" => просим ввести имя кандидата.
@@ -182,5 +192,3 @@ async def add_candidate(msg: Message, state: FSMContext):
     )
 
     await state.clear()
-
-

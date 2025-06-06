@@ -1,6 +1,11 @@
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram.types import (
+    Message,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    CallbackQuery,
+)
 from sqlalchemy.orm import selectinload
 
 from app.data.database import async_session
@@ -19,7 +24,11 @@ async def categories_list(msg: Message):
                      reply_markup=await categories_kb(role='admin'))
 
 
-def manage_category_kb(cat_id: int, run_vote_btn: bool = False, check_btn: bool = False) -> InlineKeyboardMarkup:
+def manage_category_kb(
+    cat_id: int,
+    run_vote_btn: bool = False,
+    check_btn: bool = False,
+) -> InlineKeyboardMarkup:
     buttons = [
         InlineKeyboardButton(
             text="Nomzod qo'shish",
@@ -52,7 +61,10 @@ async def check_category(call: CallbackQuery):
     """
     Обработчик нажатия кнопки "Tekshirish".
     """
-    category_id = filter_data(call.data, 'check,category_id:')
+    category_id = filter_data(
+        call.data,
+        'check,category_id:',
+    )
     async with async_session() as session:
         category = await session.get(
             Category,
@@ -61,7 +73,10 @@ async def check_category(call: CallbackQuery):
         )
         # Здесь можно добавить логику по отображению списка кандидатов,
         # их голосов и т.д. В примере просто отправим сообщение:
-        text = f"Toifa: {category.title}\nNomzodlar: ({len(category.candidates)}):\n"
+        text = (
+            f"Toifa: {category.title}\n"
+            f"Nomzodlar: ({len(category.candidates)}):\n"
+        )
         for cand in category.candidates:
             text += f"• {cand.name} — {cand.votes} ovoz\n"
         await call.answer(text, show_alert=True)
