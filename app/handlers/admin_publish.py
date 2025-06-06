@@ -2,7 +2,12 @@ from aiogram import Router, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+)
 from sqlalchemy import update
 from sqlalchemy.orm import selectinload
 
@@ -16,6 +21,18 @@ admin_publish_rt = Router(name='admin_pub')
 
 class PublishStates(StatesGroup):
     get_channel = State()
+
+
+@admin_publish_rt.callback_query(F.data.startswith('stop,category:'))
+async def stop(call: CallbackQuery):
+    cat_id = filter_data(call.data, 'stop,category:')
+    async with async_session() as session:
+        update_stmt = (
+            update(Category).where(Category.id == cat_id).values(is_active=0)
+        )
+        await session.execute(update_stmt)
+        await session.commit()
+    await call.answer('Ovoz berish to\'xtatildi', show_alert=True)
 
 
 @admin_publish_rt.callback_query(F.data.startswith('new-vote,run,category:'))
@@ -39,25 +56,36 @@ async def answer(msg: Message, state: FSMContext):
     btn_list = []
 
     async with async_session() as session:
-        category = await session.get(Category, cat_id, options=[selectinload(Category.candidates)])
-        ss = []
+        category = await session.get(
+            Category,
+            cat_id,
+            options=[selectinload(Category.candidates)],
+        )
         for candidate in category.candidates:
-            text = f'{candidate.name}\n'
-            btn = InlineKeyboardButton(text=f"{candidate.name} - {candidate.votes}",
-                                       url=f"https://t.me/shohruxs_bot?start=vote_{candidate.id}")
+            btn = InlineKeyboardButton(
+                text=f"{candidate.name} - {candidate.votes}",
+                url=f"https://t.me/shohruxs_bot?start=vote_{candidate.id}",
+            )
             btn_list.append(btn)
-            ss.append(text)
-        update_stmt = (update(Category).where(Category.id == cat_id).values(is_active=1))
+        update_stmt = (
+            update(Category)
+            .where(Category.id == cat_id)
+            .values(is_active=1)
+        )
         await session.execute(update_stmt)
         await session.commit()
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[i] for i in btn_list])
     await msg.answer(category.title, reply_markup=keyboard)
     try:
-        await bot.send_message(chat_id=channel_id, text=category.title, reply_markup=keyboard)
-    except:
-        await msg.answer('Kanalga joylashda hatolik yuz berdi. \n'
-                         'Kanal IDsini tekshiring!\n'
-                         '⚠️ Eslatma! Bot Kanalda admin bolishi zarur.')
-
-
+        await bot.send_message(
+            chat_id=channel_id,
+            text=category.title,
+            reply_markup=keyboard,
+        )
+    except Exception:
+        await msg.answer(
+            'Kanalga joylashda hatolik yuz berdi. \n'
+            'Kanal IDsini tekshiring!\n'
+            '⚠️ Eslatma! Bot Kanalda admin bolishi zarur.',
+        )
